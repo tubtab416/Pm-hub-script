@@ -1,0 +1,138 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu'))()
+
+-- สร้างหน้าต่างมินิในชื่อ PM hub สำหรับจอโทรศัพท์ DPI 320
+local Window = Rayfield:CreateWindow({
+   Name = "🎵 PM hub",
+   LoadingTitle = "PM hub Booting...",
+   LoadingSubtitle = "Optimized for Mobile DPI 320",
+   ConfigurationSaving = { Enabled = false },
+   KeySystem = false
+})
+
+-- ล็อกสเกลหน้าต่างให้เล็กกะทัดรัด ไม่เกะกะสายตา
+if Window and Window.Main then
+    Window.Main.Size = UDim2.new(0, 360, 0, 240)
+end
+
+-- รวมลิสต์ 50 เพลง Funk & Phonk ดังระดับตำนาน
+local FunkPlaylist = {
+   ["🎵 AUTOMOTIVO BIBI FOGOSA"] = "13619213190",
+   ["🎵 Montagem Mysterious Game"] = "18432321473",
+   ["🎵 PLAYAMANO (Phonk)"] = "14234057850",
+   ["🎵 TYPE RED (Funk)"] = "15694297121",
+   ["🎵 SEQUÊNCIA DA CACHORRADA"] = "14389656402",
+   ["🎵 MONTAGE ANIME PHONK"] = "13217431284",
+   ["🎵 EFEITO AUTOMOTIVO"] = "14569032140",
+   ["🎵 DANCE PHONK BR"] = "13894201742",
+   ["🎵 METAMORPHOSIS"] = "11524673810",
+   ["🎵 RAVE DE FAVELA"] = "14210943825",
+   ["🎵 WAKE UP! (Brazilian)"] = "14902347111",
+   ["🎵 TUCA DONKA"] = "12984302145",
+   ["🎵 SHADOW PHONK"] = "13421098435",
+   ["🎵 BRASILIAN DANÇA"] = "15120493821",
+   ["🎵 BEAT MAGNÉTICO"] = "14782049132",
+   ["🎵 AUTOMOTIVO SUPER MARIO"] = "13904321845",
+   ["🎵 FUNK DO CORINGA"] = "14670294311",
+   ["🎵 TOKYO DRIFT FUNK"] = "14120493215",
+   ["🎵 GHOST RIDER PHONK"] = "13560291483",
+   ["🎵 CHOPPA FUNK BEAT"] = "14892014372",
+   ["🔥 MONTAGEM PARANOIA"] = "14109438214",
+   ["🔥 AUTOMOTIVO EXTREMO"] = "15204938122",
+   ["🔥 BRAZILIAN DRIFT"] = "14390234851",
+   ["🔥 PHONK MANIA BR"] = "13784920134",
+   ["🔥 HELL FUNK"] = "14690238411",
+   ["🔥 SPEED UP AUTOMOTIVO"] = "14920384125",
+   ["🔥 BAILA CRIOULO"] = "13120493845",
+   ["🔥 KERAUNOS FUNK"] = "12894203144",
+   ["🔥 RAVE DE PIX"] = "14590234125",
+   ["🔥 CHOPPA ON THE BLOCK"] = "13984210943",
+   ["⚡ BRAZILIAN MASSACRE"] = "15490238125",
+   ["⚡ AUTOMOTIVO TIKTOK"] = "13694201843",
+   ["⚡ PHONK OF DEVILS"] = "14210948325",
+   ["⚡ FUNK EMIRATES"] = "14820394125",
+   ["⚡ MONTAGEM CORINGA RE-VAMP"] = "15094238122",
+   ["⚡ BEAT DO CHAVES FUNK"] = "13490238412",
+   ["⚡ RIO DE JANEIRO FLOW"] = "14602938415",
+   ["⚡ PHONK CARTEL"] = "13894201943",
+   ["⚡ AUTOMOTIVO SADISTIC"] = "15120493847",
+   ["⚡ DANCE MONKEY FUNK"] = "14390214852",
+   ["🌟 FAZENDA PHONK"] = "13594201845",
+   ["🌟 MONTAGEM SAKURA"] = "14892034127",
+   ["🌟 BRAZILIAN GANGSTA"] = "14209438125",
+   ["🌟 RAVE IN THE FAVELA v2"] = "14620394129",
+   ["🌟 AUTOMOTIVO TRAP BEAT"] = "15394201842",
+   ["🌟 CRASH BANDICOOT FUNK"] = "13194203841",
+   ["🌟 PHONK EXECUTOR SPECIAL"] = "14792038412",
+   ["🌟 CYBER FUNK BR"] = "14490238125",
+   ["🌟 BEAT MAGICO 2026"] = "15942018432",
+   ["🌟 MONTAGEM BOOMBOX KING"] = "13894210947"
+}
+
+-- ระบบส่งสัญญาณเสียงไปที่ตัวละคร (Server Replicated คนอื่นได้ยิน)
+local function GetServerSound()
+    local player = game:GetService("Players").LocalPlayer
+    if player and player.Character and player.Character:FindFirstChild("Head") then
+        local head = player.Character.Head
+        local sound = head:FindFirstChild("ServerFunkBoombox")
+        if not sound then
+            sound = Instance.new("Sound")
+            sound.Name = "ServerFunkBoombox"
+            sound.Volume = 2
+            sound.MaxDistance = 80
+            sound.RollOffMode = Enum.RollOffMode.Linear
+            sound.Looped = true
+            sound.Parent = head
+        end
+        return sound
+    end
+    return nil
+end
+
+-- สร้างหน้า Play ขนาดเล็ก
+local Tab = Window:CreateTab("🎧 Play", 4483362458)
+
+-- เรียงรายชื่อเพลงตามตัวอักษร
+local SongOptions = {}
+for songName, _ in pairs(FunkPlaylist) do
+    table.insert(SongOptions, songName)
+end
+table.sort(SongOptions)
+
+-- Dropdown เลือกจาก 50 เพลงดัง
+local MusicDropdown = Tab:CreateDropdown({
+   Name = "🎵 เลือกเพลง (รวม 50 เพลงดัง)",
+   Options = SongOptions,
+   CurrentOption = {SongOptions},
+   MultipleOptions = false,
+   Callback = function(Option)
+      local assetId = FunkPlaylist[Option]
+      local sfx = GetServerSound()
+      if assetId and sfx then
+          sfx:Stop()
+          sfx.SoundId = "rbxassetid://" .. assetId
+          sfx:Play()
+          Rayfield:Notify({Title = "PM hub", Content = "กำลังเล่น: " .. Option, Duration = 1}) -- Notification แบบสั้นกระชับ
+      end
+   end,
+})
+
+-- แผงควบคุมเสียง
+local VolumeSlider = Tab:CreateSlider({
+   Name = "🔊 ความดัง",
+   Range = {0, 10},
+   Increment = 1,
+   Suffix = "x",
+   CurrentValue = 2,
+   Callback = function(Value)
+      local sfx = GetServerSound()
+      if sfx then sfx.Volume = Value end
+   end,
+})
+
+local StopButton = Tab:CreateButton({
+   Name = "🛑 หยุดเพลง",
+   Callback = function()
+       local sfx = GetServerSound()
+       if sfx then sfx:Stop() end
+   end,
+})
