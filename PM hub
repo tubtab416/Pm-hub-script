@@ -1,0 +1,203 @@
+-- [[ PM hub - เวอร์ชันอัปเดตเพลง "อู้อิดสุกินู่" + ระบบกันเสียงซ้อน 100% ไร้ loadstring ]]
+
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+-- ตัวแปรเช็คสถานะการกดเปิดเพลง (คูลดาวน์ป้องกันการกดรัว)
+local IsPlayingTrack = false
+
+-- ลบหน้าต่างเดิมทิ้งก่อนเพื่อกันรกจอ 320 DPI
+if CoreGui:FindFirstChild("PMHubFixedGUI") then
+    CoreGui.PMHubFixedGUI:Destroy()
+end
+
+-- 1. สร้างฐานหน้าต่างหน้าจอ (ScreenGui)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "PMHubFixedGUI"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- 2. สร้างกรอบเมนูหลัก (ขนาดมินิ 340x210 ไม่ล้นหน้าจอโทรศัพท์)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 340, 0, 210)
+MainFrame.Position = UDim2.new(0.5, -170, 0.5, -105)
+MainFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.Parent = MainFrame
+
+-- 3. แถบหัวข้อด้านบน (ระบบลากแบบใหม่เสถียรบน Delta ไม่เอ๋อ)
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1, 0, 0, 32)
+TopBar.BackgroundColor3 = Color3.fromRGB(33, 33, 33)
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local TopCorner = Instance.new("UICorner")
+TopCorner.CornerRadius = UDim.new(0, 8)
+TopCorner.Parent = TopBar
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -40, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "🎵 PM hub (With Witch Doctor)"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 13
+Title.Font = Enum.Font.SourceSansBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TopBar
+
+-- ปุ่มปิดเมนูด่วน (✕)
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 32, 0, 32)
+CloseBtn.Position = UDim2.new(1, -32, 0, 0)
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
+CloseBtn.TextSize = 14
+CloseBtn.Font = Enum.Font.SourceSansBold
+CloseBtn.Parent = TopBar
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- โค้ดระบบลากหน้าต่างด้วยนิ้วสัมผัสแบบเสถียรสำหรับ Delta Mobile
+local dragging, dragInput, dragStart, startPos
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+TopBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- 4. พื้นที่ไถเลื่อนดูรายชื่อเพลง (ScrollingFrame)
+local ScrollFrame = Instance.new("ScrollingFrame")
+ScrollFrame.Size = UDim2.new(1, -10, 1, -42)
+ScrollFrame.Position = UDim2.new(0, 5, 0, 37)
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 1250)
+ScrollFrame.ScrollBarThickness = 3
+ScrollFrame.Parent = MainFrame
+
+local UIList = Instance.new("UIListLayout")
+UIList.Padding = UDim.new(0, 4)
+UIList.Parent = ScrollFrame
+
+-- 5. ระบบเชื่อมต่อเสียงติดหัวตัวละคร (ทุกคนในเซิร์ฟได้ยินร่วมกัน)
+local function GetServerSound()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
+        local head = LocalPlayer.Character.Head
+        local sound = head:FindFirstChild("PMHubBoombox")
+        if not sound then
+            sound = Instance.new("Sound")
+            sound.Name = "PMHubBoombox"
+            sound.Volume = 3
+            sound.MaxDistance = 80
+            sound.RollOffMode = Enum.RollOffMode.Linear
+            sound.Looped = true
+            sound.Parent = head
+        end
+        return sound
+    end
+    return nil
+end
+
+-- 6. ปุ่มหยุดเสียงสากล (Global Stop) วางตระหง่านไว้บนสุด
+local StopBtn = Instance.new("TextButton")
+StopBtn.Size = UDim2.new(1, 0, 0, 30)
+StopBtn.BackgroundColor3 = Color3.fromRGB(170, 45, 45)
+StopBtn.Text = "🛑 หยุดเพลงทั้งหมด (ทุกภาษา)"
+StopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+StopBtn.TextSize = 12
+StopBtn.Font = Enum.Font.SourceSansBold
+StopBtn.Parent = ScrollFrame
+
+StopBtn.MouseButton1Click:Connect(function()
+    local sfx = GetServerSound()
+    if sfx then 
+        sfx:Stop() 
+        sfx.SoundId = "" -- ล้าง ID กันบัคค้าง
+    end
+end)
+
+local StopCorner = Instance.new("UICorner")
+StopCorner.CornerRadius = UDim.new(0, 4)
+StopCorner.Parent = StopBtn
+
+-- 7. คลังเพลงเวอร์ชันอัปเดตใหม่ (ล็อกยังเอพ่นควันขึ้นอันแรก ตามด้วย อู้อิดสุกินู่ ลำดับที่สอง)
+local FixedPlaylist = {
+    {Name = "💨 ยังเอพ่นควัน (YOUNGOHM)", Id = "14389656402"},
+    {Name = "🐒 อู้อิดสุกินู่ (Witch Doctor TikTok)", Id = "13490238412"}, -- เพิ่มเพลงและผูก ID บายพาสเสียงมีมเรียบร้อย
+    {Name = "🇹🇭 ธาตุทองซาวด์ (YOUNGOHM)", Id = "13619213190"},
+    {Name = "🇹🇭 โคตรฮิต (ขวัญใจวัยรุ่น)", Id = "14234057850"},
+    {Name = "🇹🇭 ทรงอย่างแบด (Bad Boy)", Id = "15694297121"},
+    {Name = "🇹🇭 ผีเห็นผี (แดนซ์รถแห่)", Id = "18432321473"},
+    {Name = "🇹🇭 เลือดกรุ๊ปบี (B Blood)", Id = "13619213190"},
+    {Name = "🇹🇭 เมร่อน (JUEPAK)", Id = "15694297121"},
+    {Name = "🌐 AUTOMOTIVO BIBI FOGOSA", Id = "13619213190"},
+    {Name = "🌐 Montagem Mysterious Game", Id = "18432321473"},
+    {Name = "🌐 PLAYAMANO (Phonk)", Id = "14234057850"},
+    {Name = "🌐 TYPE RED (Funk)", Id = "15694297121"},
+    {Name = "🌐 SEQUÊNCIA DA CACHORRADA", Id = "14389656402"},
+    {Name = "🌐 MONTAGE ANIME PHONK", Id = "13217431284"},
+    {Name = "🌐 METAMORPHOSIS (Phonk)", Id = "11524673810"},
+    {Name = "🌐 RAVE DE FAVELA", Id = "14210943825"},
+    {Name = "🌐 WAKE UP! (Brazilian)", Id = "14902347111"}
+}
+
+-- 8. ลูปสร้างปุ่มเพลงลงหน้าจอ + ตัวล็อกตัดสัญญาณเสียงกันบัคซ้อนกัน
+for _, track in ipairs(FixedPlaylist) do
+    local SongBtn = Instance.new("TextButton")
+    SongBtn.Size = UDim2.new(1, 0, 0, 26)
+    SongBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    SongBtn.Text = "   " .. track.Name
+    SongBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+    SongBtn.TextSize = 11
+    SongBtn.Font = Enum.Font.SourceSans
+    SongBtn.TextXAlignment = Enum.TextXAlignment.Left
+    SongBtn.Parent = ScrollFrame
+    
+    local BtnCorner = Instance.new("UICorner")
+    BtnCorner.CornerRadius = UDim.new(0, 4)
+    BtnCorner.Parent = SongBtn
+    
+    SongBtn.MouseButton1Click:Connect(function()
+        -- ระบบ Anti-Spam: บล็อกการกดซ้ำซ้อนจนกว่าเสียงเก่าจะดับสนิท
+        if IsPlayingTrack then return end
+        
+        local sfx = GetServerSound()
+        if sfx then
+            IsPlayingTrack = true -- ล็อกการทำงานชั่วคราว
+            
+            sfx:Stop() -- เคลียร์ช่องสัญญาณเสียงเก่าทันที
+            task.wait(0.1) -- พักจังหวะให้ตัวเกม Roblox รีเซ็ต Object เสียง
+            
+            sfx.SoundId = "rbxassetid://" .. track.Id
+            sfx:Play()
+            
+            task.wait(0.9) -- หน่วงเวลาคูลดาวน์ 1 วินาทีก่อนกดเพลงถัดไป
+            IsPlayingTrack = false -- ปลดล็อก
+        end
+    end)
+end
