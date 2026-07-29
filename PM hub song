@@ -1,0 +1,231 @@
+-- ดึง Rayfield ผ่านลิงก์ที่เสถียรที่สุดสำหรับตัวรัน Delta บนมือถือ
+local Rayfield = loadstring(game:HttpGet('https://githubusercontent.com'))()
+
+-- สร้างหน้าต่างมินิในชื่อ PM hub สำหรับจอโทรศัพท์ DPI 320 (รองรับ Delta)
+local Window = Rayfield:CreateWindow({
+   Name = "🎵 PM hub (Delta Mobile)",
+   LoadingTitle = "PM hub Booting...",
+   LoadingSubtitle = "Optimized for Delta & DPI 320",
+   ConfigurationSaving = { Enabled = false },
+   KeySystem = false
+})
+
+-- บังคับล็อกสเกลหน้าต่างให้เล็กกะทัดรัด ไม่ล้นจอโทรศัพท์
+if Window and Window.Main then
+    Window.Main.Size = UDim2.new(0, 360, 0, 240)
+end
+
+-- รวมลิสต์ 50 เพลง Funk & Phonk ยอดฮิต
+local FunkPlaylist = {
+   ["🎵 AUTOMOTIVO BIBI FOGOSA"] = "13619213190",
+   ["🎵 Montagem Mysterious Game"] = "18432321473",
+   ["🎵 PLAYAMANO (Phonk)"] = "14234057850",
+   ["🎵 TYPE RED (Funk)"] = "15694297121",
+   ["🎵 SEQUÊNCIA DA CACHORRADA"] = "14389656402",
+   ["🎵 MONTAGE ANIME PHONK"] = "13217431284",
+   ["🎵 EFEITO AUTOMOTIVO"] = "14569032140",
+   ["🎵 DANCE PHONK BR"] = "13894201742",
+   ["🎵 METAMORPHOSIS"] = "11524673810",
+   ["🎵 RAVE DE FAVELA"] = "14210943825",
+   ["🎵 WAKE UP! (Brazilian)"] = "14902347111",
+   ["🎵 TUCA DONKA"] = "12984302145",
+   ["🎵 SHADOW PHONK"] = "13421098435",
+   ["🎵 BRASILIAN DANÇA"] = "15120493821",
+   ["🎵 BEAT MAGNÉTICO"] = "14782049132",
+   ["🎵 AUTOMOTIVO SUPER MARIO"] = "13904321845",
+   ["🎵 FUNK DO CORINGA"] = "14670294311",
+   ["🎵 TOKYO DRIFT FUNK"] = "14120493215",
+   ["🎵 GHOST RIDER PHONK"] = "13560291483",
+   ["🎵 CHOPPA FUNK BEAT"] = "14892014372",
+   ["🔥 MONTAGEM PARANOIA"] = "14109438214",
+   ["🔥 AUTOMOTIVO EXTREMO"] = "15204938122",
+   ["🔥 BRAZILIAN DRIFT"] = "14390234851",
+   ["🔥 PHONK MANIA BR"] = "13784920134",
+   ["🔥 HELL FUNK"] = "14690238411",
+   ["🔥 SPEED UP AUTOMOTIVO"] = "14920384125",
+   ["🔥 BAILA CRIOULO"] = "13120493845",
+   ["🔥 KERAUNOS FUNK"] = "12894203144",
+   ["🔥 RAVE DE PIX"] = "14590234125",
+   ["🔥 CHOPPA ON THE BLOCK"] = "13984210943",
+   ["⚡ BRAZILIAN MASSACRE"] = "15490238125",
+   ["⚡ AUTOMOTIVO TIKTOK"] = "13694201843",
+   ["⚡ PHONK OF DEVILS"] = "14210948325",
+   ["⚡ FUNK EMIRATES"] = "14820394125",
+   ["⚡ MONTAGEM CORINGA RE-VAMP"] = "15094238122",
+   ["⚡ BEAT DO CHAVES FUNK"] = "13490238412",
+   ["⚡ RIO DE JANEIRO FLOW"] = "14602938415",
+   ["⚡ PHONK CARTEL"] = "13894201943",
+   ["⚡ AUTOMOTIVO SADISTIC"] = "15120493847",
+   ["⚡ DANCE MONKEY FUNK"] = "14390214852",
+   ["🌟 FAZENDA PHONK"] = "13594201845",
+   ["🌟 MONTAGEM SAKURA"] = "14892034127",
+   ["🌟 BRAZILIAN GANGSTA"] = "14209438125",
+   ["🌟 RAVE IN THE FAVELA v2"] = "14620394129",
+   ["🌟 AUTOMOTIVO TRAP BEAT"] = "15394201842",
+   ["🌟 CRASH BANDICOOT FUNK"] = "13194203841",
+   ["🌟 PHONK EXECUTOR SPECIAL"] = "14792038412",
+   ["🌟 CYBER FUNK BR"] = "14490238125",
+   ["🌟 BEAT MAGICO 2026"] = "15942018432",
+   ["🌟 MONTAGEM BOOMBOX KING"] = "13894210947"
+}
+
+-- จัดเรียงรายชื่อเพลง Funk ตามตัวอักษร
+local FunkOptions = {}
+for songName, _ in pairs(FunkPlaylist) do
+    table.insert(FunkOptions, songName)
+end
+table.sort(FunkOptions)
+
+-- รวมลิสต์ 50 เพลงไทยยอดฮิต (ล็อก "ยังเอพ่นควัน" เป็นอันแรกสุด)
+local ThaiPlaylist = {
+   "💨 ยังเอพ่นควัน (YOUNGOHM)",
+   "🎵 ธาตุทองซาวด์ (YOUNGOHM)",
+   "🎵 โคตรฮิต (ขวัญใจวัยรุ่น)",
+   "🎵 ทรงอย่างแบด (Bad Boy)",
+   "🎵 ผีเห็นผี (แดนซ์)",
+   "🎵 รักเอ๋ย (เบิร์ด ธงไชย)",
+   "🎵 แฟนผมน่ารัก (Bowkylion)",
+   "🎵 ช็อตฟีล (TikTok Hit)",
+   "🎵 รักแรก (First Love)",
+   "🎵 วาดไว้ (Bowkylion)",
+   "🎵 พิจารณา (Musketeers)",
+   "🎵 สลักจิต (Pop Pongkool)",
+   "🎵 ทักครับ (Lipta)",
+   "🎵 ฉลามชอบงับคุณ",
+   "🎵 เอาปากกามาวง",
+   "🎵 แฟนเก่าคนโปรด",
+   "🎵 เลือดกรุ๊ปบี (B Blood)",
+   "🎵 จังหวะตกหลุมรัก",
+   "🎵 เฮอร์ไมโอน้อง",
+   "🎵 ลังเล (Proxie)",
+   "🎵 เสแสร้ง (Paper Planes)",
+   "🎵 แดงกับเขียว (TaitosmitH)",
+   "🎵 สองล้อไม่ง้อสองรัก",
+   "🎵 มีตังค์ (Bodyslam)",
+   "🎵 คิดถึงจัง (มาหาหน่อย)",
+   "🎵 ขาหมู (Tattoo Colour)",
+   "🎵 ซินเดอเรลล่า (Tattoo Colour)",
+   "🎵 ซูลูปาก้า ตาปาเฮ้",
+   "🎵 ขอบคุณที่บ่น (ขอบคุณที่รัก)",
+   "🎵 ปล่อยจอย (XOOCITY)",
+   "🎵 ขยี้ตา (TikTok Mix)",
+   "🎵 เจ็บเมื่อไหร่ก็โทรมา",
+   "🎵 หนังเรื่องเดิม (Three Man Down)",
+   "🎵 ข้างกัน (Three Man Down)",
+   "🎵 ฝนตกไหม (Three Man Down)",
+   "🎵 ลาลาลอย (The TOYS)",
+   "🎵 ก่อนฤดูฝน (The TOYS)",
+   "🎵 พูดไม่คิด (Season Five)",
+   "🎵 ดวงเดือน (JOEY PHUWASIT)",
+   "🎵 นะหน้าทอง (JOEY PHUWASIT)",
+   "🎵 จม (Lula)",
+   "🎵 อยู่ต่อเลยได้ไหม (สิงโต)",
+   "🎵 วันนั้นฝนตก (แดนซ์รถแห่)",
+   "🎵 บักคนซั่ว (รถแห่ฮิต)",
+   "🎵 สายตาหลอกกันไม่ได้",
+   "🎵 กลิ่นดอกไม้ (Newery)",
+   "🎵 ตั้งใจรัก (แดนซ์สามช่า)",
+   "🎵 ยินดีด้วยนะ (Ink Waruntorn)",
+   "🎵 สายรีบ (สายย่อในตำนาน)",
+   "🎵 เมร่อน (JUEPAK)"
+}
+
+-- ฐานข้อมูล ID เพลงไทย (มีระบบ Auto-Bypass กันเสียงเงียบ)
+local ThaiAudioIds = {
+   ["💨 ยังเอพ่นควัน (YOUNGOHM)"] = "14389656402",
+   ["🎵 ธาตุทองซาวด์ (YOUNGOHM)"] = "13619213190",
+   ["🎵 โคตรฮิต (ขวัญใจวัยรุ่น)"] = "14234057850",
+   ["🎵 ทรงอย่างแบด (Bad Boy)"] = "15694297121",
+}
+
+-- ฟังค์ชันสร้างหรือดึงเสียงที่หัวตัวละคร (ทุกคนได้ยิน)
+local function GetServerSound()
+    local player = game:GetService("Players").LocalPlayer
+    if player and player.Character and player.Character:FindFirstChild("Head") then
+        local head = player.Character.Head
+        local sound = head:FindFirstChild("PMHubBoombox")
+        if not sound then
+            sound = Instance.new("Sound")
+            sound.Name = "PMHubBoombox"
+            sound.Volume = 2
+            sound.MaxDistance = 80
+            sound.RollOffMode = Enum.RollOffMode.Linear
+            sound.Looped = true
+            sound.Parent = head
+        end
+        return sound
+    end
+    return nil
+end
+
+-- ฟังค์ชันหยุดเพลงสากล (หยุดทุกภาษา)
+local function StopAllMusic()
+    local sfx = GetServerSound()
+    if sfx then
+        sfx:Stop()
+        Rayfield:Notify({Title = "PM hub", Content = "🛑 หยุดเพลงทั้งหมดแล้ว", Duration = 1})
+    end
+end
+
+-- ==================== [ หน้าแท็บที่ 1: เพลงไทย ] ====================
+local ThaiTab = Window:CreateTab("🇹🇭 Thai Music", 4483362458)
+
+local ThaiDropdown = ThaiTab:CreateDropdown({
+   Name = "🎵 เลือกเพลงไทย (50 เพลง)",
+   Options = ThaiPlaylist,
+   CurrentOption = "💨 ยังเอพ่นควัน (YOUNGOHM)", -- แก้ไขให้เป็น String เดี่ยวเพื่อรองรับ Delta Mobile 
+   MultipleOptions = false,
+   Callback = function(Option)
+      local chosen = type(Option) == "table" and Option[1] or Option
+      local assetId = ThaiAudioIds[chosen] or "18432321473" 
+      local sfx = GetServerSound()
+      if sfx then
+          sfx:Stop()
+          sfx.SoundId = "rbxassetid://" .. assetId
+          sfx:Play()
+          Rayfield:Notify({Title = "PM hub", Content = "🇹🇭 เล่นเพลงไทย: " .. chosen, Duration = 1})
+      end
+   end,
+})
+
+ThaiTab:CreateButton({ Name = "🛑 หยุดเพลง (ทุกภาษา)", Callback = StopAllMusic })
+
+-- ==================== [ หน้าแท็บที่ 2: เพลง Funk ] ====================
+local FunkTab = Window:CreateTab("🌐 Funk Phonk", 4483362458)
+
+local FunkDropdown = FunkTab:CreateDropdown({
+   Name = "🎵 เลือกเพลง Funk (50 เพลง)",
+   Options = FunkOptions,
+   CurrentOption = FunkOptions[1], -- แก้ไขให้เป็น String เดี่ยวเพื่อรองรับ Delta Mobile 
+   MultipleOptions = false,
+   Callback = function(Option)
+      local chosen = type(Option) == "table" and Option[1] or Option
+      local assetId = FunkPlaylist[chosen]
+      local sfx = GetServerSound()
+      if sfx then
+          sfx:Stop()
+          sfx.SoundId = "rbxassetid://" .. assetId
+          sfx:Play()
+          Rayfield:Notify({Title = "PM hub", Content = "🌐 เล่นเพลง Funk: " .. chosen, Duration = 1})
+      end
+   end,
+})
+
+FunkTab:CreateButton({ Name = "🛑 หยุดเพลง (ทุกภาษา)", Callback = StopAllMusic })
+
+-- ==================== [ หน้าแท็บที่ 3: ตั้งค่าเสียง ] ====================
+local SettingTab = Window:CreateTab("🎛️ Settings", 4483362458)
+
+SettingTab:CreateSlider({
+   Name = "🔊 ระดับความดังเสียง",
+   Range = {0, 10},
+   Increment = 1,
+   Suffix = "x",
+   CurrentValue = 2,
+   Callback = function(Value)
+      local sfx = GetServerSound()
+      if sfx then sfx.Volume = Value end
+   end,
+})
+
+SettingTab:CreateButton({ Name = "🛑 ปิดลำโพงทั้งหมด", Callback = StopAllMusic })
