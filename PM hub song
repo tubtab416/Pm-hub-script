@@ -1,0 +1,229 @@
+-- [[ PM hub - เวอร์ชันระบบสไลด์ย่อหน้าต่าง (Slide Minimize) ไร้ loadstring รองรับ Delta ]]
+
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+
+local IsPlayingTrack = false
+local IsMinimized = false -- เช็คสถานะการย่อหน้าต่าง
+
+if CoreGui:FindFirstChild("PMHubFixedGUI") then
+    CoreGui.PMHubFixedGUI:Destroy()
+end
+
+-- 1. สร้างฐานหน้าต่างหน้าจอ (ScreenGui)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "PMHubFixedGUI"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- 2. สร้างกรอบเมนูหลัก (เปิดคุณสมบัติ ClipsDescendants ไว้เพื่อให้เวลาแถบสไลด์ขึ้นด้านบนแล้วไม่ทะลุขอบ)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 340, 0, 210)
+MainFrame.Position = UDim2.new(0.5, -170, 0.5, -105)
+MainFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.ClipsDescendants = true -- จุดสำคัญ: ล็อกไม่ให้เนื้อหาที่สไลด์ขึ้นไปโผล่ทะลุแถบด้านบน
+MainFrame.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.Parent = MainFrame
+
+-- 3. แถบหัวข้อด้านบน (TopBar)
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1, 0, 0, 32)
+TopBar.BackgroundColor3 = Color3.fromRGB(33, 33, 33)
+TopBar.BorderSizePixel = 0
+TopBar.ZIndex = 2 -- ให้อยู่เลเยอร์บนสุดเสมอ
+TopBar.Parent = MainFrame
+
+local TopCorner = Instance.new("UICorner")
+TopCorner.CornerRadius = UDim.new(0, 8)
+TopCorner.Parent = TopBar
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -70, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "🎵 PM hub (Slide Minimizable)"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 13
+Title.Font = Enum.Font.SourceSansBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.ZIndex = 3
+Title.Parent = TopBar
+
+-- ปุ่มปิดเมนู (✕)
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 32, 0, 32)
+CloseBtn.Position = UDim2.new(1, -32, 0, 0)
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
+CloseBtn.TextSize = 14
+CloseBtn.Font = Enum.Font.SourceSansBold
+CloseBtn.ZIndex = 3
+CloseBtn.Parent = TopBar
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- 4. กล่องคอนเทนเนอร์สำหรับแถบด้านล่างทั้งหมด (เพื่อให้สไลด์ขึ้นลงพร้อมกันได้ในชิ้นเดียว)
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Name = "ContentFrame"
+ContentFrame.Size = UDim2.new(1, 0, 1, -32)
+ContentFrame.Position = UDim2.new(0, 0, 0, 32)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Parent = MainFrame
+
+-- ปุ่มย่อ/ขยายเมนู (➖) วางไว้ข้างๆ ปุ่มปิด (✕)
+local MiniBtn = Instance.new("TextButton")
+MiniBtn.Size = UDim2.new(0, 32, 0, 32)
+MiniBtn.Position = UDim2.new(1, -64, 0, 0)
+MiniBtn.BackgroundTransparency = 1
+MiniBtn.Text = "➖"
+MiniBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+MiniBtn.TextSize = 12
+MiniBtn.Font = Enum.Font.SourceSansBold
+MiniBtn.ZIndex = 3
+MiniBtn.Parent = TopBar
+
+-- คำสั่งสั่งสไลด์ขึ้น/ลง เมื่อกดย่อหน้าต่าง
+MiniBtn.MouseButton1Click:Connect(function()
+    local frameTweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    
+    if not IsMinimized then
+        -- จังหวะกดย่อ: สไลด์แถบด้านล่างขึ้นไปซ่อนด้านบน และหดความสูงหน้าต่างหลักเหลือแค่แถบ TopBar
+        local shrinkFrame = TweenService:Create(MainFrame, frameTweenInfo, {Size = UDim2.new(0, 340, 0, 32)})
+        local slideUp = TweenService:Create(ContentFrame, frameTweenInfo, {Position = UDim2.new(0, 0, 0, -180)})
+        
+        shrinkFrame:Play()
+        slideUp:Play()
+        MiniBtn.Text = "➕" -- เปลี่ยนไอคอนเป็นบวกเมื่อย่อเสร็จ
+        IsMinimized = true
+    else
+        -- จังหวะกดขยาย: สไลด์แถบด้านล่างคลี่ตัวกลับมาที่เดิม และยืดขนาดหน้าต่างหลักเท่าเดิม
+        local expandFrame = TweenService:Create(MainFrame, frameTweenInfo, {Size = UDim2.new(0, 340, 0, 210)})
+        local slideDown = TweenService:Create(ContentFrame, frameTweenInfo, {Position = UDim2.new(0, 0, 0, 32)})
+        
+        expandFrame:Play()
+        slideDown:Play()
+        MiniBtn.Text = "➖" -- เปลี่ยนไอคอนเป็นลบเมื่อขยายเสร็จ
+        IsMinimized = false
+    end
+end)
+
+-- ระบบลากเมนูสำหรับมือถือ
+local dragging, dragInput, dragStart, startPos
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+TopBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- 5. พื้นที่ไถเลื่อนดูรายชื่อเพลง (ScrollingFrame) อยู่ใน ContentFrame เพื่อเข้าแกนสไลด์
+local ScrollFrame = Instance.new("ScrollingFrame")
+ScrollFrame.Size = UDim2.new(1, -10, 1, -10)
+ScrollFrame.Position = UDim2.new(0, 5, 0, 5)
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 1250)
+ScrollFrame.ScrollBarThickness = 3
+ScrollFrame.Parent = ContentFrame
+
+local UIList = Instance.new("UIListLayout")
+UIList.Padding = UDim.new(0, 4)
+UIList.Parent = ScrollFrame
+
+-- ระบบเชื่อมต่อเสียง
+local function GetSafeSound()
+    local SoundService = game:GetService("SoundService")
+    local sound = SoundService:FindFirstChild("PMHubBypassSound")
+    if not sound then
+        sound = Instance.new("Sound")
+        sound.Name = "PMHubBypassSound"
+        sound.Volume = 3
+        sound.Looped = true
+        sound.Parent = SoundService
+    end
+    return sound
+end
+
+-- ปุ่มหยุดเสียงสากล
+local StopBtn = Instance.new("TextButton")
+StopBtn.Size = UDim2.new(1, 0, 0, 30)
+StopBtn.BackgroundColor3 = Color3.fromRGB(170, 45, 45)
+StopBtn.Text = "🛑 หยุดเพลงทั้งหมด (ทุกภาษา)"
+StopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+StopBtn.TextSize = 12
+StopBtn.Font = Enum.Font.SourceSansBold
+StopBtn.Parent = ScrollFrame
+StopBtn.MouseButton1Click:Connect(function()
+    local sfx = GetSafeSound()
+    if sfx then sfx:Stop() sfx.SoundId = "" end
+end)
+
+local StopCorner = Instance.new("UICorner")
+StopCorner.CornerRadius = UDim.new(0, 4)
+StopCorner.Parent = StopBtn
+
+-- ลิสต์ ID เพลงผ่านการ Bypass ความเป็นส่วนตัวของ Roblox
+local FixedPlaylist = {
+    {Name = "💨 ยังเอพ่นควัน (YOUNGOHM Bypass)", Id = "17422173467"}, 
+    {Name = "🐒 อู้อิดสุกินู่ (Witch Doctor Remix)", Id = "14389656402"}, 
+    {Name = "🌐 METAMORPHOSIS (Official Phonk)", Id = "17422173467"}, 
+    {Name = "🌐 UPTOWN FUNK (Roblox Public)", Id = "345516556"}, 
+    {Name = "🇹🇭 ธาตุทองซาวด์ (รถแห่ Remix)", Id = "13619213190"},
+    {Name = "🇹🇭 โคตรฮิต (วัยรุ่นบีท)", Id = "14234057850"},
+    {Name = "🌐 BRAZILIAN PHONK (Aggressive)", Id = "102892380593258"}, 
+    {Name = "🌐 NOITE DO CAPIM (Funk)", Id = "96688874266744"} 
+}
+
+-- ลูปวาดสร้างปุ่มเพลงบนหน้าจอ
+for _, track in ipairs(FixedPlaylist) do
+    local SongBtn = Instance.new("TextButton")
+    SongBtn.Size = UDim2.new(1, 0, 0, 26)
+    SongBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    SongBtn.Text = "   " .. track.Name
+    SongBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+    SongBtn.TextSize = 11
+    SongBtn.Font = Enum.Font.SourceSans
+    SongBtn.TextXAlignment = Enum.TextXAlignment.Left
+    SongBtn.Parent = ScrollFrame
+    
+    local BtnCorner = Instance.new("UICorner")
+    BtnCorner.CornerRadius = UDim.new(0, 4)
+    BtnCorner.Parent = SongBtn
+    
+    SongBtn.MouseButton1Click:Connect(function()
+        if IsPlayingTrack then return end
+        local sfx = GetSafeSound()
+        if sfx then
+            IsPlayingTrack = true
+            sfx:Stop()
+            task.wait(0.1)
+            sfx.SoundId = "rbxassetid://" .. track.Id
+            sfx:Play()
+            task.wait(0.5)
+            IsPlayingTrack = false
+        end
+    end)
+end
