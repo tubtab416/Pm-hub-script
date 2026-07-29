@@ -1,0 +1,33 @@
+local Rf = loadstring(game:HttpGet('https://sirius.menu'))()
+local W = Rf:CreateWindow({Name = "👑 PM hub admin", LoadingTitle = "PM hub admin", LoadingSubtitle = "Mobile", ConfigurationSaving = {Enabled = false}, KeySystem = false})
+local plyr, cam, tgt, ws, jp, fPlrs, esp, aim = game.Players.LocalPlayer, workspace.CurrentCamera, "", 16, 50, {}, false, false
+
+local function getP(n) n = n:lower() for _, p in pairs(game.Players:GetPlayers()) do if p.Name:lower():sub(1, #n) == n or p.DisplayName:lower():sub(1, #n) == n then return p end end end
+
+-- Tabs
+local M, T, P, C, O = W:CreateTab("🏠"), W:CreateTab("🎯"), W:CreateTab("⚡"), W:CreateTab("👁️"), W:CreateTab("🔥")
+M:CreateParagraph({Title = "PM hub admin", Content = "Owner Menu"})
+
+-- Target Controls
+T:CreateInput({Name = "ชื่อผู้เล่น", PlaceholderText = "...", RemoveTextAfterFocusLost = false, Callback = function(t) tgt = t end})
+T:CreateButton({Name = "💀 Kill", Callback = function() local p = getP(tgt) if p and p.Character and p.Character:FindFirstChild("Humanoid") then p.Character.Humanoid.Health = 0 end end})
+T:CreateButton({Name = "🥶 Freeze Toggle", Callback = function() local p = getP(tgt) if p and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then local hrp = p.Character.HumanoidRootPart hrp.Anchored = not hrp.Anchored Rf:Notify({Title="PM", Content=hrp.Anchored and "แช่แข็ง" or "ปลดแช่", Duration=2}) end end})
+
+-- Player Stats
+P:CreateSlider({Name = "WalkSpeed", Range = {16, 500}, Increment = 1, CurrentValue = 16, Callback = function(v) ws = v plyr.Character.Humanoid.WalkSpeed = v end})
+P:CreateSlider({Name = "JumpPower", Range = {50, 1000}, Increment = 1, CurrentValue = 50, Callback = function(v) jp = v plyr.Character.Humanoid.JumpPower = v end})
+P:CreateToggle({Name = "Loop Stats", CurrentValue = false, Callback = function(v) _G.L=v spawn(function() while _G.L do pcall(function() plyr.Character.Humanoid.WalkSpeed, plyr.Character.Humanoid.JumpPower = ws, jp end) task.wait(1) end end) end})
+
+-- ESP & Aimbot
+local function applyESP(p) if p == plyr then return end local function h(c) if not c:FindFirstChild("E") then local hl = Instance.new("Highlight", c) hl.Name = "E" hl.FillColor, hl.FillTransparency = Color3.fromRGB(255,0,0), 0.5 end end if p.Character then h(p.Character) end p.CharacterAdded:Connect(h) end
+C:CreateToggle({Name = "ESP", CurrentValue = false, Callback = function(v) esp = v if esp then for _, p in pairs(game.Players:GetPlayers()) do applyESP(p) end game.Players.PlayerAdded:Connect(applyESP) else for _, p in pairs(game.Players:GetPlayers()) do pcall(function() p.Character.E:Destroy() end) end end end})
+
+C:CreateToggle({Name = "Aimbot", CurrentValue = false, Callback = function(v) aim = v spawn(function() while aim do local cp, sd = nil, math.huge for _, p in pairs(game.Players:GetPlayers()) do if p ~= plyr and p.Character and p.Character:FindFirstChild("Head") and p.Character.Humanoid.Health > 0 then local pos, os = cam:WorldToViewportPoint(p.Character.Head.Position) if os then local d = (Vector2.new(pos.X, pos.Y) - Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)).Magnitude if d < sd then sd, cp = d, p end end end end if cp then cam.CFrame = CFrame.new(cam.CFrame.Position, cp.Character.Head.Position) end task.wait() end end) end})
+
+-- Fly & Noclip
+local flying, fSpd, nc = false, 50, false
+O:CreateToggle({Name = "Fly", CurrentValue = false, Callback = function(v) flying = v local hrp = plyr.Character:WaitForChild("HumanoidRootPart") if flying then local bv, bg = Instance.new("BodyVelocity", hrp), Instance.new("BodyGyro", hrp) bv.Name, bg.Name = "B", "G" bv.maxForce, bg.maxTorque = Vector3.new(4e5,4e5,4e5), Vector3.new(4e5,4e5,4e5) spawn(function() while flying do pcall(function() bg.cframe = cam.CFrame bv.velocity = (plyr.Character.Humanoid.MoveDirection.Magnitude > 0) and (cam.CFrame.LookVector * fSpd) or Vector3.new(0,0.1,0) end) task.wait() end if hrp:FindFirstChild("B") then hrp.B:Destroy() end if hrp:FindFirstChild("G") then hrp.G:Destroy() end end) else pcall(function() hrp.B:Destroy() hrp.G:Destroy() end) end end})
+O:CreateSlider({Name = "Fly Speed", Range = {10, 300}, Increment = 5, CurrentValue = 50, Callback = function(v) fSpd = v end})
+O:CreateToggle({Name = "Noclip", CurrentValue = false, Callback = function(v) nc = v game:GetService("RunService").Stepped:Connect(function() if nc then pcall(function() for _, p in pairs(plyr.Character:GetChildren()) do if p:IsA("BasePart") then p.CanCollide = false end end end) end end) end})
+
+Rf:Notify({Name = "PM hub admin", Content = "Ready!", Duration = 3})
